@@ -33,8 +33,34 @@ export type BackgroundStyleId =
   | 'neofaro-exec';
 
 /**
+ * Tema o unidad dentro del programa de una materia / rama / categoría
+ */
+export interface SyllabusTopic {
+  id: string;
+  title: string;
+  completed: boolean;
+  notes?: string;
+  targetHours?: number;
+  priority?: 'alta' | 'media' | 'baja';
+  geminiPrompt?: string;
+}
+
+/**
+ * Actividad recurrente o rutina del usuario (Gimnasio, Trabajo, etc.)
+ */
+export interface UserRoutineItem {
+  id: string;
+  title: string;
+  category: 'gimnasio' | 'trabajo' | 'estudio' | 'otro';
+  daysOfWeek: number[]; // 0: Dom, 1: Lun, 2: Mar, 3: Mié, 4: Jue, 5: Vie, 6: Sáb
+  startTime: string; // "18:00"
+  endTime: string;   // "19:30"
+  notes?: string;
+}
+
+/**
  * Representa una Materia (UNGS), Rama Scout o Categoría/Área Laboral
- * con soporte de color personalizable por el usuario.
+ * con soporte de alta/baja/archivado, color personalizable y roadmap de estudio.
  */
 export interface SubCategoryTag {
   id: string;
@@ -43,6 +69,10 @@ export interface SubCategoryTag {
   shortCode: string;
   colorHex: string;
   description?: string;
+  /** Si está archivada, se oculta del selector activo pero se conserva */
+  archived?: boolean;
+  /** Temas del programa / syllabus para hacer seguimiento de "cómo seguir" */
+  syllabusTopics?: SyllabusTopic[];
 }
 
 /**

@@ -158,6 +158,8 @@ export function AgentSyncModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successCount, setSuccessCount] = useState<number | null>(null);
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [keyPointsToConsider, setKeyPointsToConsider] = useState<string[]>([]);
 
   React.useEffect(() => {
     setSheetUrlInput(googleSheetsUrl);
@@ -171,15 +173,85 @@ export function AgentSyncModal({
 
   if (!isOpen) return null;
 
-  // Subir documento (.txt, .md, .csv, .ics, .json)
+  // Subir documento (.txt, .md, .csv, .ics, .json, .pdf o imagen)
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploadedFileName(file.name);
-    const textContent = await file.text();
-    setRawText(textContent);
     setConfirmedCount(null);
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setImagePreviewUrl(dataUrl);
+        setRawText(
+          `[Documento / Apunte Visual: ${file.name}]\n- Extraer temas, entregas y conceptos a tener en cuenta de la imagen.\n- Recomendar calendario de estudio para los temas identificados.`
+        );
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreviewUrl(null);
+      try {
+        const textContent = await file.text();
+        setRawText(textContent);
+      } catch {
+        setRawText(`[Archivo cargado: ${file.name}]`);
+      }
+    }
+  };
+
+  // Generar recomendación de calendario cuando el texto no tiene fechas o es un temario
+  const handleGenerateRecommendedSchedule = () => {
+    const lines = rawText
+      .split('\n')
+      .map((l) => l.replace(/^[-*•0-9.)\s]+/, '').trim())
+      .filter((l) => l.length > 3 && !l.startsWith('[') && !l.startsWith('#'))
+      .slice(0, 5);
+
+    const topics = lines.length > 0 ? lines : [
+      'Conceptos fundamentales y teoría',
+      'Resolución de ejercicios prácticos',
+      'Casos de estudio y diseño',
+      'Repaso general y simulación de examen',
+    ];
+
+    const today = new Date();
+    const generatedCandidates: AnalyzedCandidateEvent[] = topics.map((topic, index) => {
+      const targetDate = new Date();
+      targetDate.setDate(today.getDate() + (index + 1) * 3); // Cada 3 días
+
+      const yyyy = targetDate.getFullYear();
+      const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(targetDate.getDate()).padStart(2, '0');
+
+      const start = `${yyyy}-${mm}-${dd}T19:00`;
+      const end = `${yyyy}-${mm}-${dd}T20:30`;
+
+      return {
+        tempId: `cand-rec-${Date.now().toString(36)}-${index}`,
+        sourceSnippet: topic,
+        confidence: 'alta' as const,
+        detectedReasons: ['Calendario de estudio recomendado automáticamente por el sistema'],
+        selected: true,
+        dto: {
+          titulo: `Sesión de Estudio: ${topic}`,
+          descripcion: `Bloque de práctica recomendado para consolidar: "${topic}".`,
+          fecha_inicio: start,
+          fecha_fin: end,
+          tipo_calendario: activeCalendar,
+          categoria: 'tarea',
+          estado: 'pendiente',
+          completado: false,
+          origen: 'agente_ia',
+          subcategoria_id: subCategories.find((s) => s.calendarType === activeCalendar)?.id,
+        },
+      };
+    });
+
+    setCandidates(generatedCandidates);
+    setAnalysisStep('review');
   };
 
   // Ejecutar análisis del texto o documento
@@ -187,6 +259,14 @@ export function AgentSyncModal({
     if (!rawText.trim()) return;
     setIsAnalyzing(true);
     setConfirmedCount(null);
+
+    // Extraer lista de puntos a tener en cuenta
+    const considerations = rawText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 6 && !l.startsWith('#') && !l.startsWith('['))
+      .slice(0, 6);
+    setKeyPointsToConsider(considerations);
 
     try {
       const res = await fetch('/api/analyze', {
@@ -393,7 +473,7 @@ export function AgentSyncModal({
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept=".txt,.md,.csv,.tsv,.ics,.json"
+                      accept=".txt,.md,.csv,.tsv,.ics,.json,.pdf,image/*"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
@@ -406,14 +486,17 @@ export function AgentSyncModal({
                       <span>
                         {uploadedFileName
                           ? `Archivo: ${uploadedFileName}`
-                          : 'Subir Documento (.txt, .csv, .ics, .md)'}
+                          : 'Subir Documento (PDF, Imagen, TXT, CSV)'}
                       </span>
                     </button>
 
                     {uploadedFileName && (
                       <button
                         type="button"
-                        onClick={() => setUploadedFileName(null)}
+                        onClick={() => {
+                          setUploadedFileName(null);
+                          setImagePreviewUrl(null);
+                        }}
                         className="text-xs text-slate-400 hover:text-rose-500"
                       >
                         Quitar archivo
@@ -432,6 +515,7 @@ export function AgentSyncModal({
                         type="button"
                         onClick={() => {
                           setUploadedFileName(null);
+                          setImagePreviewUrl(null);
                           setRawText(SAMPLE_TEXTS_BY_CALENDAR[calKey].text);
                         }}
                         className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -446,38 +530,68 @@ export function AgentSyncModal({
                   </div>
                 </div>
 
+                {/* Previsualización si se cargó una imagen */}
+                {imagePreviewUrl && (
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+                    <img
+                      src={imagePreviewUrl}
+                      alt="Documento cargado"
+                      className="w-16 h-16 object-cover rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm"
+                    />
+                    <div className="text-xs text-slate-600 dark:text-slate-300">
+                      <p className="font-bold">Imagen / Apunte visual cargado</p>
+                      <p className="text-[11px] text-slate-400">
+                        El sistema analizará el texto y propondrá los temas clave y un calendario recomendado.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Área de Texto para pegar o editar el contenido del documento */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                    Pegá el texto del cronograma, mensaje de WhatsApp, mail o contenido del documento
+                    Pegá el texto del cronograma, temario, apuntes, WhatsApp o contenido a estudiar
                   </label>
                   <textarea
-                    rows={8}
+                    rows={7}
                     value={rawText}
                     onChange={(e) => setRawText(e.target.value)}
-                    placeholder="Pegá aquí fechas de parciales UNGS, cronograma de campamento Sábado a Sábado, actividades con puntos o tareas laborales..."
+                    placeholder="Pegá aquí fechas de parciales UNGS, temario que quieres aprender, cronograma de campamento o tareas laborales..."
                     className="w-full p-3.5 rounded-2xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 leading-relaxed"
                   />
                 </div>
 
-                <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/80 dark:border-slate-800">
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    El analizador identificará fechas, horarios, calendario (UNGS/Scout/Trabajo), categoría, bloques Sábado a Sábado y puntos para que los confirmes.
+                    Si tu documento no tiene fechas fijas, podés solicitar que recomiende un calendario de estudio automáticamente.
                   </p>
 
-                  <button
-                    type="button"
-                    disabled={isAnalyzing || !rawText.trim()}
-                    onClick={handleRunAnalysis}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-sm transition-all shrink-0"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    <span>
-                      {isAnalyzing
-                        ? 'Analizando...'
-                        : 'Analizar e Identificar Eventos'}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!rawText.trim()}
+                      onClick={handleGenerateRecommendedSchedule}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 transition-all shrink-0"
+                      title="Si no hay fechas fijas, distribuye los temas en un calendario sugerido"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Recomendar Calendario</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isAnalyzing || !rawText.trim()}
+                      onClick={handleRunAnalysis}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-sm transition-all shrink-0"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      <span>
+                        {isAnalyzing
+                          ? 'Analizando...'
+                          : 'Analizar e Identificar Eventos'}
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </>
             ) : (
@@ -507,9 +621,32 @@ export function AgentSyncModal({
                   </button>
                 </div>
 
+                {/* Lista de Puntos Clave a Tener en Cuenta detectados */}
+                {keyPointsToConsider.length > 0 && (
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                      Lista de lo que debes tener en cuenta (conceptos y requisitos extraídos):
+                    </span>
+                    <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1 pl-5 list-disc">
+                      {keyPointsToConsider.map((point, idx) => (
+                        <li key={idx}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {candidates.length === 0 ? (
-                  <div className="p-8 text-center text-slate-400">
-                    No se detectaron eventos claros en el texto. Volvé atrás y agregá una fecha o descripción por línea.
+                  <div className="p-6 text-center text-slate-400 space-y-3">
+                    <p>No se detectaron fechas fijas en este texto.</p>
+                    <button
+                      type="button"
+                      onClick={handleGenerateRecommendedSchedule}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Recomendar Calendario de Estudio con estos temas</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 neofaro-scrollbar">

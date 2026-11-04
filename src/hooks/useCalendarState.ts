@@ -10,11 +10,14 @@ import {
   EventStatus,
   FastAPIAgentIngestRequest,
   SubCategoryTag,
+  SyllabusTopic,
+  UserRoutineItem,
 } from '@/types/calendar';
 import {
   buildInitialSeedEvents,
   CALENDAR_ORDER,
   DEFAULT_SUBCATEGORIES,
+  DEFAULT_USER_ROUTINES,
 } from '@/config/neofaro-theme';
 import {
   BackendConnectionMode,
@@ -34,6 +37,8 @@ const STORAGE_KEYS = {
   BACKGROUNDS: 'neofaro_cal_backgrounds_v1',
   THEME: 'neofaro_cal_dark_mode_v1',
   GSHEETS_URL: 'neofaro_cal_gsheets_url_v1',
+  ROUTINES: 'neofaro_cal_routines_v1',
+  NOTIFICATIONS: 'neofaro_cal_notifications_v1',
 };
 
 export function useCalendarState() {
@@ -63,6 +68,12 @@ export function useCalendarState() {
     scout: 'neofaro-scout-topo',
     trabajo: 'neofaro-exec',
   });
+
+  const [userRoutines, setUserRoutines] = useState<UserRoutineItem[]>(
+    DEFAULT_USER_ROUTINES
+  );
+  const [notificationsEnabled, setNotificationsEnabled] =
+    useState<boolean>(false);
 
   // Filtros interactivos
   const [selectedCategory, setSelectedCategory] = useState<
@@ -115,6 +126,18 @@ export function useCalendarState() {
         if (Array.isArray(parsed) && parsed.length > 0) {
           setEvents(parsed);
         }
+      }
+
+      const savedRoutines = localStorage.getItem(STORAGE_KEYS.ROUTINES);
+      if (savedRoutines) {
+        const parsed = JSON.parse(savedRoutines);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setUserRoutines(parsed);
+        }
+      }
+
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        setNotificationsEnabled(Notification.permission === 'granted');
       }
     } catch {
       // Ignorar errores de almacenamiento local
@@ -300,8 +323,17 @@ export function useCalendarState() {
     setCurrentDate(new Date());
   }, []);
 
-  // Subcategorías del calendario activo
+  // Subcategorías visibles (no archivadas) del calendario activo
   const activeSubCategories = useMemo(
+    () =>
+      subCategories.filter(
+        (sub) => sub.calendarType === activeCalendar && !sub.archived
+      ),
+    [subCategories, activeCalendar]
+  );
+
+  // Todas las subcategorías del calendario activo (incluyendo archivadas)
+  const allSubCategoriesOfActiveCalendar = useMemo(
     () => subCategories.filter((sub) => sub.calendarType === activeCalendar),
     [subCategories, activeCalendar]
   );
@@ -318,6 +350,14 @@ export function useCalendarState() {
   const filteredEvents = useMemo(() => {
     return events.filter((evt) => {
       if (!showAllCalendarsOverlay && evt.calendarType !== activeCalendar) {
+        return false;
+      }
+      // Ocultar eventos de materias archivadas excepto si se seleccionó esa materia explícitamente
+      if (
+        evt.subCategoryId &&
+        subCategoryMap[evt.subCategoryId]?.archived &&
+        selectedSubCategoryId !== evt.subCategoryId
+      ) {
         return false;
       }
       if (selectedCategory !== 'all' && evt.category !== selectedCategory) {
@@ -519,6 +559,204 @@ export function useCalendarState() {
     [activeCalendar, subCategories, googleSheetsUrl]
   );
 
+  // Alternar archivado de una materia / rama / categoría
+  const toggleArchiveSubCategory = useCallback(
+    (id: string) => {
+      setSubCategories((prev) => {
+        const next = prev.map((sub) =>
+          sub.id === id ? { ...sub, archived: !sub.archived } : sub
+        );
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Actualizar datos completos de una materia (nombre, código, temas, etc.)
+  const updateSubCategory = useCallback(
+    (updated: SubCategoryTag) => {
+      setSubCategories((prev) => {
+        const next = prev.map((sub) => (sub.id === updated.id ? updated : sub));
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Eliminar una materia
+  const deleteSubCategory = useCallback(
+    (id: string) => {
+      setSubCategories((prev) => {
+        const next = prev.filter((sub) => sub.id !== id);
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Marcar/desmarcar tema completado en el roadmap de una materia
+  const toggleSyllabusTopic = useCallback(
+    (subCatId: string, topicId: string) => {
+      setSubCategories((prev) => {
+        const next = prev.map((sub) => {
+          if (sub.id !== subCatId) return sub;
+          const topics = (sub.syllabusTopics || []).map((top) =>
+            top.id === topicId ? { ...top, completed: !top.completed } : top
+          );
+          return { ...sub, syllabusTopics: topics };
+        });
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Agregar un tema nuevo al temario/roadmap de una materia
+  const addSyllabusTopic = useCallback(
+    (
+      subCatId: string,
+      title: string,
+      priority: 'alta' | 'media' | 'baja' = 'media',
+      targetHours?: number,
+      notes?: string
+    ) => {
+      setSubCategories((prev) => {
+        const next = prev.map((sub) => {
+          if (sub.id !== subCatId) return sub;
+          const newTopic: SyllabusTopic = {
+            id: `top-${Date.now().toString(36)}`,
+            title,
+            completed: false,
+            priority,
+            targetHours,
+            notes,
+          };
+          return {
+            ...sub,
+            syllabusTopics: [...(sub.syllabusTopics || []), newTopic],
+          };
+        });
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Eliminar un tema del temario
+  const deleteSyllabusTopic = useCallback(
+    (subCatId: string, topicId: string) => {
+      setSubCategories((prev) => {
+        const next = prev.map((sub) => {
+          if (sub.id !== subCatId) return sub;
+          return {
+            ...sub,
+            syllabusTopics: (sub.syllabusTopics || []).filter(
+              (top) => top.id !== topicId
+            ),
+          };
+        });
+        savePreferencesToBackend(
+          next,
+          backgroundByCalendar,
+          googleSheetsUrl
+        ).then((mode) => setBackendMode(mode));
+        return next;
+      });
+    },
+    [backgroundByCalendar, googleSheetsUrl]
+  );
+
+  // Gestión de rutinas de usuario (Gimnasio, trabajo, estudio)
+  const addRoutine = useCallback((routine: Omit<UserRoutineItem, 'id'>) => {
+    setUserRoutines((prev) => {
+      const next: UserRoutineItem[] = [
+        ...prev,
+        { ...routine, id: `rout-${Date.now().toString(36)}` },
+      ];
+      try {
+        localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const updateRoutine = useCallback((updated: UserRoutineItem) => {
+    setUserRoutines((prev) => {
+      const next = prev.map((r) => (r.id === updated.id ? updated : r));
+      try {
+        localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const deleteRoutine = useCallback((id: string) => {
+    setUserRoutines((prev) => {
+      const next = prev.filter((r) => r.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Notificaciones del navegador
+  const requestNotificationPermission = useCallback(async (): Promise<boolean> => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return false;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      const granted = permission === 'granted';
+      setNotificationsEnabled(granted);
+      return granted;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const sendBrowserNotification = useCallback(
+    (title: string, options?: NotificationOptions) => {
+      if (
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        new Notification(title, {
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          ...options,
+        });
+      }
+    },
+    []
+  );
+
   const resetDemoData = useCallback(() => {
     const fresh = buildInitialSeedEvents(new Date());
     setEvents(fresh);
@@ -545,6 +783,7 @@ export function useCalendarState() {
     filteredEvents,
     subCategories,
     activeSubCategories,
+    allSubCategoriesOfActiveCalendar,
     subCategoryMap,
     backgroundByCalendar,
     activeBackgroundStyle: backgroundByCalendar[activeCalendar],
@@ -565,6 +804,19 @@ export function useCalendarState() {
     ingestFromAgent,
     updateSubCategoryColor,
     addSubCategoryTag,
+    toggleArchiveSubCategory,
+    updateSubCategory,
+    deleteSubCategory,
+    toggleSyllabusTopic,
+    addSyllabusTopic,
+    deleteSyllabusTopic,
+    userRoutines,
+    addRoutine,
+    updateRoutine,
+    deleteRoutine,
+    notificationsEnabled,
+    requestNotificationPermission,
+    sendBrowserNotification,
     resetDemoData,
     backendMode,
     isSyncing,

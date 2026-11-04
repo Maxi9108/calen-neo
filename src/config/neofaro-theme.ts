@@ -194,6 +194,36 @@ export const EVENT_ORIGIN_META: Record<
   },
 };
 
+export const DEFAULT_USER_ROUTINES: import('@/types/calendar').UserRoutineItem[] = [
+  {
+    id: 'routine-work',
+    title: 'Horario Laboral',
+    category: 'trabajo',
+    daysOfWeek: [1, 2, 3, 4, 5],
+    startTime: '09:00',
+    endTime: '18:00',
+    notes: 'Bloque corporativo y reuniones',
+  },
+  {
+    id: 'routine-gym',
+    title: 'Gimnasio / Entrenamiento',
+    category: 'gimnasio',
+    daysOfWeek: [1, 3, 5],
+    startTime: '18:30',
+    endTime: '20:00',
+    notes: 'Entrenamiento de fuerza y acondicionamiento',
+  },
+  {
+    id: 'routine-scout',
+    title: 'Actividad Scout de Sábados',
+    category: 'otro',
+    daysOfWeek: [6],
+    startTime: '14:30',
+    endTime: '18:30',
+    notes: 'Encuentro semanal en el patio de grupo',
+  },
+];
+
 export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
   // Materias Académicas (UNGS)
   {
@@ -203,6 +233,49 @@ export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
     shortCode: 'PROG-III',
     colorHex: '#4F46E5',
     description: 'Grafos, complejidad y diseño de algoritmos',
+    archived: false,
+    syllabusTopics: [
+      {
+        id: 'p3-top-1',
+        title: 'Grafos y Representaciones (Matriz y Listas de Adyacencia)',
+        completed: true,
+        priority: 'alta',
+        targetHours: 6,
+        notes: 'Repasar BFS, DFS y detección de ciclos en grafos dirigidos.',
+      },
+      {
+        id: 'p3-top-2',
+        title: 'Árboles Generadores Mínimos (Kruskal & Prim)',
+        completed: true,
+        priority: 'alta',
+        targetHours: 8,
+        notes: 'Implementación con estructura Union-Find (Disjoint Set).',
+      },
+      {
+        id: 'p3-top-3',
+        title: 'Caminos Mínimos (Dijkstra, Bellman-Ford, Floyd-Warshall)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 10,
+        notes: 'Hacer hincapié en pesos negativos y colas de prioridad.',
+      },
+      {
+        id: 'p3-top-4',
+        title: 'Redes de Flujo Máximo y Cortes Mínimos (Ford-Fulkerson & Edmonds-Karp)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 12,
+        notes: 'Tema central de la entrega del TP2.',
+      },
+      {
+        id: 'p3-top-5',
+        title: 'Complejidad Computacional (P, NP, NP-Completo y Reducciones)',
+        completed: false,
+        priority: 'media',
+        targetHours: 8,
+        notes: 'Comprender Teorema de Cook y reducciones polinomiales.',
+      },
+    ],
   },
   {
     id: 'ungs-inge1',
@@ -211,6 +284,38 @@ export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
     shortCode: 'ISW-I',
     colorHex: '#0891B2',
     description: 'Requerimientos, arquitectura y metodologías ágiles',
+    archived: false,
+    syllabusTopics: [
+      {
+        id: 'isw-top-1',
+        title: 'Ingeniería de Requerimientos y Casos de Uso Extendidos',
+        completed: true,
+        priority: 'media',
+        targetHours: 6,
+      },
+      {
+        id: 'isw-top-2',
+        title: 'Patrones de Diseño GoF (Creacionales, Estructurales, Comportamiento)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 10,
+        notes: 'Hacer hincapié para el 2do parcial: Factory, Observer, Strategy.',
+      },
+      {
+        id: 'isw-top-3',
+        title: 'Arquitectura Limpia (Hexagonal / Clean Architecture) y DDD',
+        completed: false,
+        priority: 'alta',
+        targetHours: 8,
+      },
+      {
+        id: 'isw-top-4',
+        title: 'Metodologías Ágiles (Scrum, Kanban, Estimación con Story Points)',
+        completed: true,
+        priority: 'media',
+        targetHours: 4,
+      },
+    ],
   },
   {
     id: 'ungs-evs',
@@ -219,6 +324,31 @@ export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
     shortCode: 'EVS',
     colorHex: '#9333EA',
     description: 'Lógica formal, contratos y testing automatizado',
+    archived: false,
+    syllabusTopics: [
+      {
+        id: 'evs-top-1',
+        title: 'Diseño por Contratos (Precondiciones, Postcondiciones e Invariantes)',
+        completed: true,
+        priority: 'alta',
+        targetHours: 6,
+      },
+      {
+        id: 'evs-top-2',
+        title: 'Model Checking y Lógica Temporal (LTL / CTL)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 12,
+        notes: 'Lectura de Lamport y modelado de exclusión mutua en TLA+.',
+      },
+      {
+        id: 'evs-top-3',
+        title: 'Testing Automatizado: Cobertura de Código, Mutación y BDD',
+        completed: false,
+        priority: 'media',
+        targetHours: 8,
+      },
+    ],
   },
   {
     id: 'ungs-sor',
@@ -227,6 +357,30 @@ export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
     shortCode: 'SOR',
     colorHex: '#E11D48',
     description: 'Concurrencia, memoria virtual y protocolos TCP/IP',
+    archived: false,
+    syllabusTopics: [
+      {
+        id: 'sor-top-1',
+        title: 'Sincronización de Procesos (Semáforos, Monitores y Deadlock)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 10,
+      },
+      {
+        id: 'sor-top-2',
+        title: 'Gestión de Memoria Virtual (Paginación, Segmentación y TLB)',
+        completed: false,
+        priority: 'alta',
+        targetHours: 8,
+      },
+      {
+        id: 'sor-top-3',
+        title: 'Arquitectura TCP/IP y Ruteo Dinámico (OSPF, BGP)',
+        completed: false,
+        priority: 'media',
+        targetHours: 8,
+      },
+    ],
   },
   {
     id: 'ungs-creditos',
@@ -235,6 +389,23 @@ export const DEFAULT_SUBCATEGORIES: SubCategoryTag[] = [
     shortCode: 'SEM-UNGS',
     colorHex: '#D946EF',
     description: 'Actividades acreditables con puntaje de carrera',
+    archived: false,
+    syllabusTopics: [
+      {
+        id: 'sem-top-1',
+        title: 'Jornadas de Investigación en Informática (ICI)',
+        completed: true,
+        priority: 'media',
+        targetHours: 4,
+      },
+      {
+        id: 'sem-top-2',
+        title: 'Taller de Ética en Inteligencia Artificial y Datos',
+        completed: false,
+        priority: 'media',
+        targetHours: 6,
+      },
+    ],
   },
 
   // Ramas Scout

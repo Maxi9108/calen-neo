@@ -18,6 +18,8 @@ import {
   Layers,
   Menu,
   X,
+  BookOpen,
+  Bot,
 } from 'lucide-react';
 import { CalendarType, CalendarViewMode } from '@/types/calendar';
 import {
@@ -47,6 +49,8 @@ interface NeoFaroHeaderProps {
   onOpenNewEvent: () => void;
   onOpenCustomizer: () => void;
   onOpenAgentModal: () => void;
+  onOpenSubjectManager?: () => void;
+  onOpenCoachModal?: () => void;
   onToggleMobileSidebar: () => void;
   backendMode: BackendConnectionMode;
   isSyncing: boolean;
@@ -78,6 +82,8 @@ export function NeoFaroHeader({
   onOpenNewEvent,
   onOpenCustomizer,
   onOpenAgentModal,
+  onOpenSubjectManager,
+  onOpenCoachModal,
   onToggleMobileSidebar,
   backendMode,
   isSyncing,
@@ -155,8 +161,20 @@ export function NeoFaroHeader({
               </div>
             </div>
 
-            {/* Acciones Rápidas Móvil (Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
+            {/* Acciones Rápidas Móvil (Coach, Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
             <div className="flex lg:hidden items-center gap-1.5 shrink-0">
+              {onOpenCoachModal && (
+                <button
+                  type="button"
+                  onClick={onOpenCoachModal}
+                  className="p-2 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"
+                  aria-label="Coach y Rutinas"
+                  title="Coach & Rutinas"
+                >
+                  <Bot className="w-4 h-4" />
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen((prev) => !prev)}
@@ -271,6 +289,30 @@ export function NeoFaroHeader({
 
           {/* Derecha en Escritorio (lg+): Estado FastAPI, Personalización, Tema y Nuevo Evento */}
           <div className="hidden lg:flex items-center gap-2 shrink-0">
+            {onOpenCoachModal && (
+              <button
+                type="button"
+                onClick={onOpenCoachModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/80 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-all shadow-sm"
+                title="Coach de Estudio, Rutinas (Gym/Trabajo) y Prompts Gemini"
+              >
+                <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>Coach & Rutinas</span>
+              </button>
+            )}
+
+            {onOpenSubjectManager && (
+              <button
+                type="button"
+                onClick={onOpenSubjectManager}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                title="Gestor de Materias, altas, bajas, archivo y Roadmap"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                <span>{envMeta.subCategoryLabel} & Roadmap</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onOpenAgentModal}

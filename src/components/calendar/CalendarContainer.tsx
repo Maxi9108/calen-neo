@@ -12,6 +12,8 @@ import {
   Palette,
   Cpu,
   ArrowRightLeft,
+  BookOpen,
+  Bot,
 } from 'lucide-react';
 import { useCalendarState } from '@/hooks/useCalendarState';
 import {
@@ -26,6 +28,8 @@ import { WeekView } from './WeekView';
 import { EventFormModal } from '@/components/modals/EventFormModal';
 import { CustomizerModal } from '@/components/modals/CustomizerModal';
 import { AgentSyncModal } from '@/components/modals/AgentSyncModal';
+import { SubjectManagerModal } from '@/components/modals/SubjectManagerModal';
+import { CoachAssistantModal } from '@/components/modals/CoachAssistantModal';
 
 export function CalendarContainer() {
   const {
@@ -45,7 +49,9 @@ export function CalendarContainer() {
     filteredEvents,
     subCategories,
     activeSubCategories,
+    allSubCategoriesOfActiveCalendar,
     subCategoryMap,
+    backgroundByCalendar: _backgroundByCalendar,
     activeBackgroundStyle,
     setActiveBackgroundStyle,
     selectedCategory,
@@ -64,6 +70,17 @@ export function CalendarContainer() {
     ingestFromAgent,
     updateSubCategoryColor,
     addSubCategoryTag,
+    toggleArchiveSubCategory,
+    updateSubCategory,
+    deleteSubCategory,
+    toggleSyllabusTopic,
+    addSyllabusTopic,
+    deleteSyllabusTopic,
+    userRoutines,
+    addRoutine,
+    deleteRoutine,
+    notificationsEnabled,
+    requestNotificationPermission,
     resetDemoData,
     backendMode,
     isSyncing,
@@ -79,6 +96,8 @@ export function CalendarContainer() {
   const [modalDefaultDate, setModalDefaultDate] = useState<Date | null>(null);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
+  const [isSubjectManagerOpen, setIsSubjectManagerOpen] = useState(false);
+  const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Atajos de teclado Alt + Flecha Izquierda / Derecha para cambiar entre Calendario Académico, Scout y Trabajo
@@ -185,6 +204,8 @@ export function CalendarContainer() {
           onOpenNewEvent={() => handleOpenNewEvent()}
           onOpenCustomizer={() => setIsCustomizerOpen(true)}
           onOpenAgentModal={() => setIsAgentModalOpen(true)}
+          onOpenSubjectManager={() => setIsSubjectManagerOpen(true)}
+          onOpenCoachModal={() => setIsCoachModalOpen(true)}
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
           backendMode={backendMode}
           isSyncing={isSyncing}
@@ -342,6 +363,16 @@ export function CalendarContainer() {
                   </button>
                 );
               })}
+
+              <button
+                type="button"
+                onClick={() => setIsSubjectManagerOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all shrink-0"
+                title={`Gestionar ${envMeta.subCategoryLabel}, altas, bajas y ver plan de estudio`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <span>+ Administrar / Roadmap</span>
+              </button>
             </div>
 
             {activeCalendar === 'scout' && (
@@ -483,6 +514,39 @@ export function CalendarContainer() {
         onUpdateGoogleSheetsUrl={updateGoogleSheetsUrl}
         onPushAllToGoogleSheets={pushCurrentStateToGoogleSheets}
         onIngestPayload={ingestFromAgent}
+      />
+
+      {/* Modal Gestor de Materias, Altas/Bajas, Archivo y Roadmap */}
+      <SubjectManagerModal
+        isOpen={isSubjectManagerOpen}
+        onClose={() => setIsSubjectManagerOpen(false)}
+        activeCalendar={activeCalendar}
+        subCategories={subCategories}
+        allSubCategoriesOfActiveCalendar={allSubCategoriesOfActiveCalendar}
+        events={events}
+        onSelectSubCategoryForCalendar={(id) => setSelectedSubCategoryId(id)}
+        onAddSubCategory={addSubCategoryTag}
+        onUpdateSubCategory={updateSubCategory}
+        onToggleArchiveSubCategory={toggleArchiveSubCategory}
+        onDeleteSubCategory={deleteSubCategory}
+        onToggleSyllabusTopic={toggleSyllabusTopic}
+        onAddSyllabusTopic={addSyllabusTopic}
+        onDeleteSyllabusTopic={deleteSyllabusTopic}
+      />
+
+      {/* Modal Bot Coach de Organización, Rutinas (Gym/Trabajo) y Prompts */}
+      <CoachAssistantModal
+        isOpen={isCoachModalOpen}
+        onClose={() => setIsCoachModalOpen(false)}
+        activeCalendar={activeCalendar}
+        events={events}
+        subCategories={subCategories}
+        userRoutines={userRoutines}
+        onAddRoutine={addRoutine}
+        onDeleteRoutine={deleteRoutine}
+        notificationsEnabled={notificationsEnabled}
+        onRequestNotificationPermission={requestNotificationPermission}
+        onScheduleStudyEvent={(evt) => addOrUpdateEvent(evt)}
       />
     </div>
   );
