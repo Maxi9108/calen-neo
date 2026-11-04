@@ -474,6 +474,57 @@ export function useCalendarState() {
     [googleSheetsUrl]
   );
 
+  const toggleEventActivity = useCallback(
+    async (eventId: string, activityId: string) => {
+      let targetEvent: CalendarEvent | undefined;
+
+      setEvents((prev) =>
+        prev.map((evt) => {
+          if (evt.id !== eventId) return evt;
+          const currentActs = evt.activities || [];
+          const updatedActivities = currentActs.map((act) =>
+            act.id === activityId ? { ...act, completed: !act.completed } : act
+          );
+          const allCompleted =
+            updatedActivities.length > 0 &&
+            updatedActivities.every((a) => a.completed);
+
+          targetEvent = {
+            ...evt,
+            activities: updatedActivities,
+            ...(allCompleted && !evt.completed
+              ? {
+                  completed: true,
+                  status:
+                    evt.category === 'examen' ||
+                    evt.category === 'final' ||
+                    evt.category === 'trabajo_practico' ||
+                    evt.category === 'evento_con_puntos'
+                      ? 'aprobado'
+                      : 'completado',
+                }
+              : {}),
+          };
+          return targetEvent;
+        })
+      );
+
+      if (targetEvent) {
+        setIsSyncing(true);
+        try {
+          const { mode } = await updateEventInBackend(
+            targetEvent,
+            googleSheetsUrl
+          );
+          setBackendMode(mode);
+        } finally {
+          setIsSyncing(false);
+        }
+      }
+    },
+    [googleSheetsUrl]
+  );
+
   const deleteEvent = useCallback(
     async (eventId: string) => {
       setEvents((prev) => prev.filter((evt) => evt.id !== eventId));
@@ -800,6 +851,7 @@ export function useCalendarState() {
     setShowAllCalendarsOverlay,
     addOrUpdateEvent,
     toggleEventCompleted,
+    toggleEventActivity,
     deleteEvent,
     ingestFromAgent,
     updateSubCategoryColor,

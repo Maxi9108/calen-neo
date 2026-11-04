@@ -14,6 +14,7 @@ function toICalDate(dateStr: string): string {
 
 /**
  * Genera el contenido de un archivo .ics estándar para importar en Google Calendar / Apple Calendar
+ * incluyendo la lista de actividades del evento y enlaces de videos/recursos en la descripción.
  */
 export function generateICalendar(events: CalendarEvent[]): string {
   const lines = [
@@ -37,8 +38,19 @@ export function generateICalendar(events: CalendarEvent[]): string {
     lines.push(`DTSTART:${dtStart}`);
     lines.push(`DTEND:${dtEnd}`);
     lines.push(`SUMMARY:${evt.title.replace(/\n/g, ' ')}`);
-    if (evt.description) {
-      lines.push(`DESCRIPTION:${evt.description.replace(/\n/g, '\\n')}`);
+
+    let desc = evt.description ? evt.description.replace(/\n/g, '\\n') : '';
+    if (evt.activities && evt.activities.length > 0) {
+      const actLines = evt.activities.map((a) => {
+        const mark = a.completed ? '[X]' : '[ ]';
+        const lnks = (a.links || []).map((l) => `${l.title}: ${l.url}`).join(' | ');
+        return `\\n${mark} ${a.title}${a.time ? ` (${a.time})` : ''}${lnks ? ` -> ${lnks}` : ''}`;
+      });
+      desc += (desc ? '\\n\\nActividades:\\n' : 'Actividades:\\n') + actLines.join('\\n');
+    }
+
+    if (desc) {
+      lines.push(`DESCRIPTION:${desc}`);
     }
     if (evt.location) {
       lines.push(`LOCATION:${evt.location.replace(/\n/g, ' ')}`);
@@ -177,7 +189,6 @@ export function exportRoadmapMarkdown(subject: SubCategoryTag, relatedEvents: Ca
   return md;
 }
 
-
 /**
  * Genera un archivo CSV estructurado listo para abrir en Microsoft Excel o Google Sheets
  */
@@ -198,6 +209,7 @@ export function generateCalendarCSV(
     'Puntos Obtenidos',
     'Puntos Maximos',
     'Ubicacion',
+    'Actividades',
     'Descripcion',
   ];
 
@@ -210,6 +222,9 @@ export function generateCalendarCSV(
   const rows = events.map((e) => {
     const sub = e.subCategoryId ? subCategoryMap[e.subCategoryId] : null;
     const subName = sub ? `${sub.name} (${sub.shortCode})` : 'General';
+    const actsSummary = (e.activities || [])
+      .map((a) => `${a.completed ? '[X]' : '[ ]'} ${a.title}`)
+      .join('; ');
 
     return [
       escapeCSV(e.id),
@@ -224,6 +239,7 @@ export function generateCalendarCSV(
       e.pointsEarned !== undefined && e.pointsEarned !== null ? e.pointsEarned : '',
       e.pointsMax !== undefined && e.pointsMax !== null ? e.pointsMax : '',
       escapeCSV(e.location || ''),
+      escapeCSV(actsSummary),
       escapeCSV(e.description || ''),
     ].join(',');
   });
@@ -282,6 +298,20 @@ export function generateDetailedReportMarkdown(
       if (pts) md += `- **Puntos:** ${pts}\n`;
       if (evt.location) md += `- **Ubicación:** ${evt.location}\n`;
       if (evt.description) md += `- **Descripción:** ${evt.description}\n`;
+
+      if (evt.activities && evt.activities.length > 0) {
+        const doneActs = evt.activities.filter((a) => a.completed).length;
+        md += `- **Actividades del Evento (${doneActs}/${evt.activities.length} completadas):**\n`;
+        evt.activities.forEach((act) => {
+          const actCheck = act.completed ? '[x]' : '[ ]';
+          const time = act.time ? ` *(${act.time})*` : '';
+          const lnks = (act.links || [])
+            .map((l) => `[${l.title}](${l.url})`)
+            .join(' · ');
+          md += `  - ${actCheck} **${act.title}**${time}${act.description ? `: ${act.description}` : ''}${lnks ? ` (Recursos: ${lnks})` : ''}\n`;
+        });
+      }
+
       md += `\n`;
     });
 

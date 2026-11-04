@@ -67,6 +67,7 @@ export function CalendarContainer() {
     setShowAllCalendarsOverlay,
     addOrUpdateEvent,
     toggleEventCompleted,
+    toggleEventActivity,
     deleteEvent,
     ingestFromAgent,
     updateSubCategoryColor,
@@ -166,6 +167,7 @@ export function CalendarContainer() {
         onSelectCalendar={selectCalendar}
         events={events}
         activeSubCategories={activeSubCategories}
+        allSubCategoriesOfActiveCalendar={allSubCategoriesOfActiveCalendar}
         selectedSubCategoryId={selectedSubCategoryId}
         onSelectSubCategory={setSelectedSubCategoryId}
         selectedCategory={selectedCategory}
@@ -175,6 +177,9 @@ export function CalendarContainer() {
         onToggleEventCompleted={toggleEventCompleted}
         onSelectEvent={handleSelectEvent}
         onOpenCustomizer={() => setIsCustomizerOpen(true)}
+        onOpenSubjectManager={() => setIsSubjectManagerOpen(true)}
+        onToggleArchiveSubCategory={toggleArchiveSubCategory}
+        onDeleteSubCategory={deleteSubCategory}
         onResetDemoData={resetDemoData}
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
@@ -400,6 +405,7 @@ export function CalendarContainer() {
               subCategoryMap={subCategoryMap}
               onSelectEvent={handleSelectEvent}
               onToggleComplete={toggleEventCompleted}
+              onToggleActivity={toggleEventActivity}
               onCreateAtDate={(date) => handleOpenNewEvent(date)}
             />
           ) : (
@@ -410,6 +416,7 @@ export function CalendarContainer() {
               subCategoryMap={subCategoryMap}
               onSelectEvent={handleSelectEvent}
               onToggleComplete={toggleEventCompleted}
+              onToggleActivity={toggleEventActivity}
               onCreateAtDate={(date) => handleOpenNewEvent(date)}
             />
           )}
@@ -435,11 +442,11 @@ export function CalendarContainer() {
 
           <button
             type="button"
-            onClick={goToNextCalendar}
-            className="flex flex-col items-center justify-center py-1 text-slate-600 dark:text-slate-300 active:scale-95 transition-transform"
+            onClick={() => setIsSubjectManagerOpen(true)}
+            className="flex flex-col items-center justify-center py-1 text-indigo-600 dark:text-indigo-400 active:scale-95 transition-transform"
           >
-            <ArrowRightLeft className="w-5 h-5" />
-            <span className="text-[10px] font-semibold mt-0.5">Cambiar Cal</span>
+            <BookOpen className="w-5 h-5" />
+            <span className="text-[10px] font-bold mt-0.5">Materias</span>
           </button>
 
           <div className="flex items-center justify-center">
@@ -456,11 +463,11 @@ export function CalendarContainer() {
 
           <button
             type="button"
-            onClick={() => setIsCustomizerOpen(true)}
+            onClick={goToNextCalendar}
             className="flex flex-col items-center justify-center py-1 text-slate-600 dark:text-slate-300 active:scale-95 transition-transform"
           >
-            <Palette className="w-5 h-5 text-indigo-500" />
-            <span className="text-[10px] font-semibold mt-0.5">Colores</span>
+            <ArrowRightLeft className="w-5 h-5" />
+            <span className="text-[10px] font-semibold mt-0.5">Cambiar Cal</span>
           </button>
 
           <button

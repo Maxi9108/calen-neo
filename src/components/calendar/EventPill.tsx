@@ -10,6 +10,12 @@ import {
   ArrowLeft,
   ArrowRight,
   MapPin,
+  ListChecks,
+  Video,
+  ExternalLink,
+  CheckSquare,
+  Square,
+  FileText,
 } from 'lucide-react';
 import { CalendarEvent, SubCategoryTag } from '@/types/calendar';
 import {
@@ -24,6 +30,7 @@ interface EventPillProps {
   subCategory?: SubCategoryTag;
   onSelect: (event: CalendarEvent) => void;
   onToggleComplete: (eventId: string) => void;
+  onToggleActivity?: (eventId: string, activityId: string) => void;
   variant?: 'single' | 'continuous-bar' | 'week-card' | 'mobile-compact' | 'agenda-card';
   isStart?: boolean;
   isEnd?: boolean;
@@ -34,6 +41,7 @@ export function EventPill({
   subCategory,
   onSelect,
   onToggleComplete,
+  onToggleActivity,
   variant = 'single',
   isStart = true,
   isEnd = true,
@@ -151,6 +159,107 @@ export function EventPill({
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
                 {event.description}
               </p>
+            )}
+
+            {/* Actividades internas y checklist si existen */}
+            {event.activities && event.activities.length > 0 && (
+              <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
+                    <ListChecks className="w-3.5 h-3.5" />
+                    Actividades ({event.activities.filter((a) => a.completed).length}/{event.activities.length})
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {event.activities.map((act) => (
+                    <div
+                      key={act.id}
+                      className={`p-2 rounded-xl border transition-all ${
+                        act.completed
+                          ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/50'
+                          : 'bg-slate-50/70 dark:bg-slate-800/50 border-slate-200/80 dark:border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleActivity?.(event.id, act.id);
+                          }}
+                          className={`mt-0.5 transition-colors shrink-0 ${
+                            act.completed
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          {act.completed ? (
+                            <CheckSquare className="w-4 h-4" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`text-xs font-semibold leading-tight ${
+                                act.completed
+                                  ? 'line-through text-slate-400 dark:text-slate-500'
+                                  : 'text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              {act.title}
+                            </span>
+                            {act.time && (
+                              <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                {act.time}
+                              </span>
+                            )}
+                          </div>
+
+                          {act.description && (
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                              {act.description}
+                            </p>
+                          )}
+
+                          {act.links && act.links.length > 0 && (
+                            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                              {act.links.map((link) => (
+                                <a
+                                  key={link.id}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                                    link.type === 'video'
+                                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60 hover:bg-rose-100'
+                                      : link.type === 'document'
+                                      ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-900/60 hover:bg-sky-100'
+                                      : 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60 hover:bg-indigo-100'
+                                  }`}
+                                >
+                                  {link.type === 'video' ? (
+                                    <Video className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                                  ) : link.type === 'document' ? (
+                                    <FileText className="w-3 h-3 text-sky-600 dark:text-sky-400" />
+                                  ) : (
+                                    <ExternalLink className="w-3 h-3" />
+                                  )}
+                                  <span className="truncate max-w-[130px]">{link.title}</span>
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Metadatos inferiores: Fecha/Hora, Ubicación, Puntos y Estado */}
@@ -372,6 +481,28 @@ export function EventPill({
             >
               {event.title}
             </p>
+
+            {/* Indicador de Actividades y Videos para vista mensual/semanal */}
+            {event.activities && event.activities.length > 0 && (
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                  <ListChecks className="w-3 h-3 text-indigo-500" />
+                  {event.activities.filter((a) => a.completed).length}/{event.activities.length}
+                </span>
+
+                {event.activities.some((a) =>
+                  a.links?.some((l) => l.type === 'video')
+                ) && (
+                  <span
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-[10px] font-bold"
+                    title="Contiene videos explicativos"
+                  >
+                    <Video className="w-2.5 h-2.5 text-rose-500" />
+                    Video
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

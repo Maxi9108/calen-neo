@@ -27,6 +27,7 @@ interface WeekViewProps {
   subCategoryMap: Record<string, SubCategoryTag>;
   onSelectEvent: (event: CalendarEvent) => void;
   onToggleComplete: (eventId: string) => void;
+  onToggleActivity?: (eventId: string, activityId: string) => void;
   onCreateAtDate: (date: Date) => void;
 }
 
@@ -61,6 +62,7 @@ export function WeekView({
   subCategoryMap,
   onSelectEvent,
   onToggleComplete,
+  onToggleActivity,
   onCreateAtDate,
 }: WeekViewProps) {
   const weekDays = React.useMemo(() => getWeekDays(currentDate), [currentDate]);
@@ -257,6 +259,7 @@ export function WeekView({
                       }
                       onSelect={onSelectEvent}
                       onToggleComplete={onToggleComplete}
+                      onToggleActivity={onToggleActivity}
                       variant="agenda-card"
                     />
                   ))
@@ -311,6 +314,7 @@ export function WeekView({
                         }
                         onSelect={onSelectEvent}
                         onToggleComplete={onToggleComplete}
+                        onToggleActivity={onToggleActivity}
                         variant="week-card"
                       />
                     ))}

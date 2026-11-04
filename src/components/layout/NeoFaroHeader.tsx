@@ -164,8 +164,21 @@ export function NeoFaroHeader({
               </div>
             </div>
 
-            {/* Acciones Rápidas Móvil (Coach, Descargar, Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
+            {/* Acciones Rápidas Móvil (Materias/Roadmap, Coach, Descargar, Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
             <div className="flex lg:hidden items-center gap-1.5 shrink-0">
+              {onOpenSubjectManager && (
+                <button
+                  type="button"
+                  onClick={onOpenSubjectManager}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/80 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs"
+                  aria-label="Gestionar Materias y Roadmap"
+                  title="Materias, Altas, Bajas, Archivo y Roadmap"
+                >
+                  <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span>Materias</span>
+                </button>
+              )}
+
               {onOpenCoachModal && (
                 <button
                   type="button"

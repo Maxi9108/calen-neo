@@ -62,6 +62,23 @@ export function mapFastAPIToCalendarEvent(dto: FastAPIEventDTO): CalendarEvent {
         ? Number(dto.puntos_maximos)
         : undefined,
     location: dto.ubicacion ?? undefined,
+    activities: dto.actividades
+      ? dto.actividades.map((a) => ({
+          id: a.id || `act-${Math.random().toString(36).slice(2, 7)}`,
+          title: a.titulo,
+          completed: Boolean(a.completado),
+          description: a.descripcion || '',
+          time: a.horario || '',
+          links: a.enlaces
+            ? a.enlaces.map((l) => ({
+                id: l.id || `lnk-${Math.random().toString(36).slice(2, 7)}`,
+                title: l.titulo,
+                url: l.url,
+                type: (l.tipo as any) || 'link',
+              }))
+            : [],
+        }))
+      : dto.activities || undefined,
     updatedAt: dto.actualizado_en || new Date().toISOString(),
   };
 }
@@ -89,6 +106,24 @@ export function mapCalendarEventToFastAPI(
     puntos_obtenidos: event.pointsEarned ?? null,
     puntos_maximos: event.pointsMax ?? null,
     ubicacion: event.location ?? null,
+    actividades: event.activities
+      ? event.activities.map((a) => ({
+          id: a.id,
+          titulo: a.title,
+          completado: a.completed,
+          descripcion: a.description || '',
+          horario: a.time || '',
+          enlaces: a.links
+            ? a.links.map((l) => ({
+                id: l.id,
+                titulo: l.title,
+                url: l.url,
+                tipo: l.type || 'link',
+              }))
+            : [],
+        }))
+      : null,
+    activities: event.activities ?? null,
     actualizado_en: new Date().toISOString(),
   };
 }

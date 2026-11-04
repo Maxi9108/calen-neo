@@ -420,20 +420,30 @@ export function SubjectManagerModal({
                           <span>Ver en Calendario</span>
                         </button>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               onToggleArchiveSubCategory(item.id);
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-amber-600 dark:hover:text-amber-400"
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border transition-all ${
+                              item.archived
+                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:text-amber-600'
+                            }`}
                             title={item.archived ? 'Restaurar / Desarchivar' : 'Archivar para no mostrar'}
                           >
                             {item.archived ? (
-                              <ArchiveRestore className="w-3.5 h-3.5" />
+                              <>
+                                <ArchiveRestore className="w-3 h-3 text-emerald-600" />
+                                <span>Restaurar</span>
+                              </>
                             ) : (
-                              <Archive className="w-3.5 h-3.5" />
+                              <>
+                                <Archive className="w-3 h-3" />
+                                <span>Archivar</span>
+                              </>
                             )}
                           </button>
 
@@ -452,8 +462,8 @@ export function SubjectManagerModal({
                                 }
                               }
                             }}
-                            className="p-1 rounded text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
-                            title="Eliminar"
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                            title="Eliminar materia de forma permanente"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -495,7 +505,49 @@ export function SubjectManagerModal({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onToggleArchiveSubCategory(selectedSubject.id)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
+                        selectedSubject.archived
+                          ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
+                          : 'border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
+                      }`}
+                      title={selectedSubject.archived ? 'Volver a mostrar en el calendario' : 'Ocultar del calendario sin borrar'}
+                    >
+                      {selectedSubject.archived ? (
+                        <>
+                          <ArchiveRestore className="w-3.5 h-3.5" />
+                          <span>Desarchivar / Restaurar</span>
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="w-3.5 h-3.5" />
+                          <span>Archivar (Ocultar)</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (
+                          confirm(
+                            `¿Estás seguro de que deseas eliminar definitivamente "${selectedSubject.name}"?`
+                          )
+                        ) {
+                          onDeleteSubCategory(selectedSubject.id);
+                          setSelectedSubjectId(null);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-all"
+                      title="Eliminar materia de forma permanente"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Borrar</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={handleExportRoadmap}
@@ -503,7 +555,7 @@ export function SubjectManagerModal({
                       title="Descargar Plan de Estudio en Markdown"
                     >
                       <Download className="w-3.5 h-3.5" />
-                      <span>Descargar Plan</span>
+                      <span>Plan</span>
                     </button>
 
                     <button
@@ -515,7 +567,7 @@ export function SubjectManagerModal({
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
                     >
                       <CalendarIcon className="w-3.5 h-3.5" />
-                      <span>Filtrar Agenda</span>
+                      <span>Ver en Agenda</span>
                     </button>
                   </div>
                 </div>
@@ -757,3 +809,4 @@ export function SubjectManagerModal({
     </div>
   );
 }
+

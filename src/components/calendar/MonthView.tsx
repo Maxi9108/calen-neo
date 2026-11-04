@@ -27,6 +27,7 @@ interface MonthViewProps {
   subCategoryMap: Record<string, SubCategoryTag>;
   onSelectEvent: (event: CalendarEvent) => void;
   onToggleComplete: (eventId: string) => void;
+  onToggleActivity?: (eventId: string, activityId: string) => void;
   onCreateAtDate: (date: Date) => void;
 }
 
@@ -37,6 +38,7 @@ export function MonthView({
   subCategoryMap,
   onSelectEvent,
   onToggleComplete,
+  onToggleActivity,
   onCreateAtDate,
 }: MonthViewProps) {
   const weeks = React.useMemo(
@@ -287,6 +289,7 @@ export function MonthView({
                               }
                               onSelect={onSelectEvent}
                               onToggleComplete={onToggleComplete}
+                              onToggleActivity={onToggleActivity}
                               variant="single"
                             />
                           ))}
@@ -373,6 +376,7 @@ export function MonthView({
                 }
                 onSelect={onSelectEvent}
                 onToggleComplete={onToggleComplete}
+                onToggleActivity={onToggleActivity}
                 variant="agenda-card"
               />
             ))}

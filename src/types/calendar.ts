@@ -76,6 +76,30 @@ export interface SubCategoryTag {
 }
 
 /**
+ * Enlace o recurso asociado a una actividad (video de YouTube, documento Drive, reunión, etc.)
+ */
+export interface EventActivityLink {
+  id: string;
+  title: string;
+  url: string;
+  type?: 'video' | 'document' | 'link' | 'drive' | 'github';
+}
+
+/**
+ * Actividad o subtarea dentro de un evento.
+ * Un evento puede o no tener actividades, las cuales se pueden marcar como completadas
+ * y contener descripciones y enlaces a videos o recursos.
+ */
+export interface EventActivity {
+  id: string;
+  title: string;
+  completed: boolean;
+  description?: string;
+  time?: string; // Opcional, ej: "10:00 - 11:30"
+  links?: EventActivityLink[];
+}
+
+/**
  * Modelo de Evento en el Frontend (Next.js / TypeScript)
  */
 export interface CalendarEvent {
@@ -101,6 +125,8 @@ export interface CalendarEvent {
   pointsEarned?: number;
   pointsMax?: number;
   location?: string;
+  /** Lista opcional de actividades / tareas dentro del evento con sus checklists y enlaces */
+  activities?: EventActivity[];
   updatedAt?: string;
 }
 
@@ -125,6 +151,15 @@ export interface FastAPIEventDTO {
   puntos_obtenidos?: number | null;
   puntos_maximos?: number | null;
   ubicacion?: string | null;
+  actividades?: Array<{
+    id: string;
+    titulo: string;
+    completado: boolean;
+    descripcion?: string;
+    horario?: string;
+    enlaces?: Array<{ id: string; titulo: string; url: string; tipo?: string }>;
+  }> | null;
+  activities?: EventActivity[] | null;
   actualizado_en?: string;
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Radio,
   ArrowRight,
@@ -12,6 +12,11 @@ import {
   SlidersHorizontal,
   X,
   RotateCcw,
+  Archive,
+  ArchiveRestore,
+  BookOpen,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -32,6 +37,7 @@ interface NeoFaroSidebarProps {
   onSelectCalendar: (cal: CalendarType) => void;
   events: CalendarEvent[];
   activeSubCategories: SubCategoryTag[];
+  allSubCategoriesOfActiveCalendar?: SubCategoryTag[];
   selectedSubCategoryId: string | 'all';
   onSelectSubCategory: (id: string | 'all') => void;
   selectedCategory: EventCategory | 'all';
@@ -41,6 +47,9 @@ interface NeoFaroSidebarProps {
   onToggleEventCompleted: (eventId: string) => void;
   onSelectEvent: (event: CalendarEvent) => void;
   onOpenCustomizer: () => void;
+  onOpenSubjectManager?: () => void;
+  onToggleArchiveSubCategory?: (id: string) => void;
+  onDeleteSubCategory?: (id: string) => void;
   onResetDemoData: () => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
@@ -51,6 +60,7 @@ export function NeoFaroSidebar({
   onSelectCalendar,
   events,
   activeSubCategories,
+  allSubCategoriesOfActiveCalendar = [],
   selectedSubCategoryId,
   onSelectSubCategory,
   selectedCategory,
@@ -60,11 +70,20 @@ export function NeoFaroSidebar({
   onToggleEventCompleted,
   onSelectEvent,
   onOpenCustomizer,
+  onOpenSubjectManager,
+  onToggleArchiveSubCategory,
+  onDeleteSubCategory,
   onResetDemoData,
   mobileOpen,
   onCloseMobile,
 }: NeoFaroSidebarProps) {
+  const [showArchivedSection, setShowArchivedSection] = useState(false);
   const envMeta = CALENDAR_ENVIRONMENTS[activeCalendar];
+
+  const archivedSubCategories = React.useMemo(
+    () => allSubCategoriesOfActiveCalendar.filter((s) => s.archived),
+    [allSubCategoriesOfActiveCalendar]
+  );
 
   const calendarEvents = React.useMemo(
     () => events.filter((e) => e.calendarType === activeCalendar),
@@ -205,14 +224,27 @@ export function NeoFaroSidebar({
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {envMeta.subCategoryLabel}
             </span>
-            <button
-              type="button"
-              onClick={onOpenCustomizer}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-            >
-              <SlidersHorizontal className="w-3 h-3" />
-              Colores
-            </button>
+            <div className="flex items-center gap-2">
+              {onOpenSubjectManager && (
+                <button
+                  type="button"
+                  onClick={onOpenSubjectManager}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  title="Dar de alta, archivar, borrar y ver cómo seguir"
+                >
+                  <BookOpen className="w-3 h-3" />
+                  <span>Gestionar</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onOpenCustomizer}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              >
+                <SlidersHorizontal className="w-3 h-3" />
+                <span>Colores</span>
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1">
@@ -237,31 +269,115 @@ export function NeoFaroSidebar({
               ).length;
 
               return (
-                <button
+                <div
                   key={sub.id}
-                  type="button"
-                  onClick={() =>
-                    onSelectSubCategory(isSelected ? 'all' : sub.id)
-                  }
-                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${isSelected
+                  className={`group/row flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-all ${
+                    isSelected
                       ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-semibold shadow-sm'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                    }`}
+                  }`}
                 >
-                  <div className="flex items-center gap-2 truncate">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onSelectSubCategory(isSelected ? 'all' : sub.id)
+                    }
+                    className="flex items-center gap-2 truncate flex-1 text-left"
+                  >
                     <span
                       style={{ backgroundColor: sub.colorHex }}
                       className="w-3 h-3 rounded-md shrink-0 ring-2 ring-offset-1 ring-transparent dark:ring-offset-slate-900"
                     />
                     <span className="truncate">{sub.name}</span>
+                  </button>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] font-mono opacity-75 mr-0.5">
+                      {count}
+                    </span>
+
+                    {/* Botón rápido para archivar y no mostrar más */}
+                    {onToggleArchiveSubCategory && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleArchiveSubCategory(sub.id);
+                        }}
+                        className="opacity-0 group-hover/row:opacity-100 p-1 rounded text-slate-400 hover:text-amber-500 transition-opacity"
+                        title="Archivar materia (ocultar del calendario)"
+                      >
+                        <Archive className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
-                  <span className="text-[10px] font-mono opacity-75 ml-1">
-                    {count}
-                  </span>
-                </button>
+                </div>
               );
             })}
           </div>
+
+          {/* Botón rápido para abrir el Administrador de Materias */}
+          {onOpenSubjectManager && (
+            <button
+              type="button"
+              onClick={onOpenSubjectManager}
+              className="w-full mt-2 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+              <span>+ Administrar / Archivar / Borrar</span>
+            </button>
+          )}
+
+          {/* Sección de Materias Archivadas (Ocultas) */}
+          {archivedSubCategories.length > 0 && (
+            <div className="mt-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+              <button
+                type="button"
+                onClick={() => setShowArchivedSection((prev) => !prev)}
+                className="w-full flex items-center justify-between text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 py-1 px-1 transition-colors"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Archive className="w-3 h-3 text-amber-500" />
+                  <span>Archivadas ({archivedSubCategories.length})</span>
+                </span>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                  {showArchivedSection ? 'Ocultar' : 'Ver'}
+                </span>
+              </button>
+
+              {showArchivedSection && (
+                <div className="space-y-1 mt-1.5 pl-1">
+                  {archivedSubCategories.map((sub) => (
+                    <div
+                      key={sub.id}
+                      className="flex items-center justify-between p-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-800/60 text-xs"
+                    >
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span
+                          style={{ backgroundColor: sub.colorHex }}
+                          className="w-2 h-2 rounded-full shrink-0 opacity-60"
+                        />
+                        <span className="truncate text-slate-500 line-through">
+                          {sub.name}
+                        </span>
+                      </div>
+
+                      {onToggleArchiveSubCategory && (
+                        <button
+                          type="button"
+                          onClick={() => onToggleArchiveSubCategory(sub.id)}
+                          className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0 ml-1"
+                          title="Restaurar y mostrar en el calendario"
+                        >
+                          Restaurar
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. Eventos "Sábado a Sábado" (Seguimiento Rápido Multi-día con Check) */}

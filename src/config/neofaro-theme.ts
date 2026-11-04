@@ -589,6 +589,51 @@ export function buildInitialSeedEvents(referenceDate: Date = new Date()): Calend
       origin: 'campus_ungs',
       subCategoryId: 'ungs-prog3',
       location: 'Campus UNGS · Módulo 7 / Lab',
+      activities: [
+        {
+          id: 'act-ungs-1-1',
+          title: 'Diseñar algoritmo Ford-Fulkerson y Edmonds-Karp',
+          completed: true,
+          description: 'Estructurar la clase GrafoResidual y búsqueda por anchura (BFS)',
+          time: '18:00 - 19:30',
+          links: [
+            {
+              id: 'lnk-u1-1',
+              title: 'Video Explicativo Ford-Fulkerson (YouTube)',
+              url: 'https://www.youtube.com/results?search_query=algoritmo+ford+fulkerson+grafos+explicacion',
+              type: 'video',
+            },
+            {
+              id: 'lnk-u1-2',
+              title: 'Apunte Teórico UNGS Grafos',
+              url: 'https://es.wikipedia.org/wiki/Algoritmo_de_Ford-Fulkerson',
+              type: 'document',
+            },
+          ],
+        },
+        {
+          id: 'act-ungs-1-2',
+          title: 'Implementar casos de prueba JUnit y grafos de estrés',
+          completed: false,
+          description: 'Verificar cuellos de botella y cortes mínimos en redes dirigidas',
+          time: '19:45 - 21:00',
+          links: [
+            {
+              id: 'lnk-u1-3',
+              title: 'Guía de Pruebas Unitarias JUnit 5',
+              url: 'https://junit.org/junit5/docs/current/user-guide/',
+              type: 'document',
+            },
+          ],
+        },
+        {
+          id: 'act-ungs-1-3',
+          title: 'Redactar informe técnico y complejidad asintótica',
+          completed: false,
+          description: 'Completar PDF de entrega con gráficos de tiempo de cómputo',
+          time: '21:00 - 22:00',
+        },
+      ],
     },
     {
       id: 'evt-ungs-2',
@@ -604,6 +649,28 @@ export function buildInitialSeedEvents(referenceDate: Date = new Date()): Calend
       origin: 'agente_ia',
       subCategoryId: 'ungs-inge1',
       location: 'Aula 7024 · UNGS',
+      activities: [
+        {
+          id: 'act-ungs-2-1',
+          title: 'Repasar Clean Architecture y Puertos y Adaptadores',
+          completed: false,
+          description: 'Revisar capas de dominio, casos de uso e infraestructura',
+          links: [
+            {
+              id: 'lnk-u2-1',
+              title: 'Masterclass Clean Architecture (YouTube)',
+              url: 'https://www.youtube.com/results?search_query=clean+architecture+tutorial+espanol',
+              type: 'video',
+            },
+          ],
+        },
+        {
+          id: 'act-ungs-2-2',
+          title: 'Practicar casos de prueba BDD con Cucumber/Gherkin',
+          completed: false,
+          description: 'Dado-Cuando-Entonces en escenarios de facturación y reservas',
+        },
+      ],
     },
     {
       id: 'evt-ungs-3',

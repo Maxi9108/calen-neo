@@ -10,10 +10,23 @@ import {
   MapPin,
   Sparkles,
   Calendar as CalendarIcon,
+  ListChecks,
+  Plus,
+  Video,
+  FileText,
+  ExternalLink,
+  Link2,
+  CheckSquare,
+  Square,
+  Clock,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   CalendarEvent,
   CalendarType,
+  EventActivity,
+  EventActivityLink,
   EventCategory,
   EventOrigin,
   EventStatus,
@@ -71,6 +84,15 @@ export function EventFormModal({
   const [endDate, setEndDate] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+  // Sub-actividades internas del evento
+  const [activities, setActivities] = useState<EventActivity[]>([]);
+  // Estado temporal para agregar un enlace a una actividad específica
+  const [activeLinkEditorId, setActiveLinkEditorId] = useState<string | null>(null);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [newLinkType, setNewLinkType] = useState<'video' | 'document' | 'link' | 'drive' | 'github'>('video');
+  const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
+
   const availableSubCategories = React.useMemo(
     () => subCategories.filter((s) => s.calendarType === calendarType),
     [subCategories, calendarType]
@@ -95,6 +117,11 @@ export function EventFormModal({
       setLocation(initialEvent.location || '');
       setStartDate(initialEvent.startDate.slice(0, 16));
       setEndDate(initialEvent.endDate.slice(0, 16));
+      setActivities(
+        initialEvent.activities
+          ? JSON.parse(JSON.stringify(initialEvent.activities))
+          : []
+      );
     } else {
       const base = defaultDate || new Date();
       const yyyy = base.getFullYear();
@@ -125,6 +152,7 @@ export function EventFormModal({
       setLocation('');
       setStartDate(`${yyyy}-${mm}-${dd}T09:00`);
       setEndDate(`${yyyy}-${mm}-${dd}T11:00`);
+      setActivities([]);
     }
   }, [isOpen, initialEvent, defaultDate, activeCalendar, subCategories]);
 
@@ -138,6 +166,145 @@ export function EventFormModal({
     if (!title) {
       setTitle('Campamento / Actividad de Sábado a Sábado');
     }
+  };
+
+  // Métodos de gestión de actividades
+  const handleAddBlankActivity = () => {
+    const newAct: EventActivity = {
+      id: `act-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+      title: '',
+      completed: false,
+      description: '',
+      time: '',
+      links: [],
+    };
+    setActivities((prev) => [...prev, newAct]);
+  };
+
+  const handleToggleActivity = (actId: string) => {
+    setActivities((prev) =>
+      prev.map((a) => (a.id === actId ? { ...a, completed: !a.completed } : a))
+    );
+  };
+
+  const handleDeleteActivity = (actId: string) => {
+    setActivities((prev) => prev.filter((a) => a.id !== actId));
+  };
+
+  const handleUpdateActivity = (actId: string, patch: Partial<EventActivity>) => {
+    setActivities((prev) =>
+      prev.map((a) => (a.id === actId ? { ...a, ...patch } : a))
+    );
+  };
+
+  const handleAddLinkToActivity = (actId: string) => {
+    if (!newLinkUrl.trim()) return;
+    const linkItem: EventActivityLink = {
+      id: `lnk-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
+      title: newLinkTitle.trim() || (newLinkType === 'video' ? 'Video explicativo' : 'Material / Recurso'),
+      url: newLinkUrl.trim().startsWith('http') ? newLinkUrl.trim() : `https://${newLinkUrl.trim()}`,
+      type: newLinkType,
+    };
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === actId
+          ? { ...a, links: [...(a.links || []), linkItem] }
+          : a
+      )
+    );
+    setNewLinkTitle('');
+    setNewLinkUrl('');
+    setActiveLinkEditorId(null);
+  };
+
+  const handleDeleteLinkFromActivity = (actId: string, linkId: string) => {
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === actId
+          ? { ...a, links: (a.links || []).filter((l) => l.id !== linkId) }
+          : a
+      )
+    );
+  };
+
+  // Generadores rápidos de links para videos y documentación
+  const handleAutoGenerateYoutubeLink = (actId: string, actTitle: string) => {
+    const query = actTitle.trim() || title.trim() || 'clase tutorial explicacion';
+    const linkItem: EventActivityLink = {
+      id: `lnk-${Date.now().toString(36)}`,
+      title: `Video YouTube: ${query.slice(0, 30)}...`,
+      url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`,
+      type: 'video',
+    };
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === actId
+          ? { ...a, links: [...(a.links || []), linkItem] }
+          : a
+      )
+    );
+  };
+
+  const handleAutoGenerateWikiLink = (actId: string, actTitle: string) => {
+    const query = actTitle.trim() || title.trim() || 'apunte teorico';
+    const linkItem: EventActivityLink = {
+      id: `lnk-${Date.now().toString(36)}`,
+      title: `Doc / Apunte: ${query.slice(0, 30)}...`,
+      url: `https://es.wikipedia.org/wiki/Especial:Buscar?search=${encodeURIComponent(query)}`,
+      type: 'document',
+    };
+    setActivities((prev) =>
+      prev.map((a) =>
+        a.id === actId
+          ? { ...a, links: [...(a.links || []), linkItem] }
+          : a
+      )
+    );
+  };
+
+  // Sugerir Actividades & Recursos con IA
+  const handleScaffoldAiActivities = () => {
+    const base = title.trim() || 'Actividad Principal';
+    const generated: EventActivity[] = [
+      {
+        id: `act-ai-1-${Date.now()}`,
+        title: `Teoría y Fundamentos: ${base}`,
+        completed: false,
+        description: 'Revisión bibliográfica, conceptos clave y notas teóricas',
+        time: '45 min',
+        links: [
+          {
+            id: `lnk-ai-1`,
+            title: `Videos recomendados en YouTube`,
+            url: `https://www.youtube.com/results?search_query=${encodeURIComponent(`${base} explicacion tutorial`)}`,
+            type: 'video',
+          },
+          {
+            id: `lnk-ai-2`,
+            title: `Documentación y Resumen`,
+            url: `https://es.wikipedia.org/wiki/Especial:Buscar?search=${encodeURIComponent(base)}`,
+            type: 'document',
+          },
+        ],
+      },
+      {
+        id: `act-ai-2-${Date.now()}`,
+        title: `Resolución Práctica y Ejercitación de ${base}`,
+        completed: false,
+        description: 'Desarrollo de guía de ejercicios, código o dinámica de equipo',
+        time: '1h 30 min',
+        links: [],
+      },
+      {
+        id: `act-ai-3-${Date.now()}`,
+        title: `Autoevaluación y Verificación Final`,
+        completed: false,
+        description: 'Chequeo de resultados y repaso de dudas',
+        time: '30 min',
+        links: [],
+      },
+    ];
+    setActivities((prev) => [...prev, ...generated]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,6 +333,7 @@ export function EventFormModal({
         pointsMax:
           category === 'evento_con_puntos' ? Number(pointsMax) : undefined,
         location: location.trim() || undefined,
+        activities: activities.length > 0 ? activities : undefined,
       });
       onClose();
     } finally {
@@ -555,6 +723,297 @@ export function EventFormModal({
               placeholder="Detalles de la entrega, lista de equipo para el campamento o notas procesadas por el agente..."
               className="w-full px-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
             />
+          </div>
+
+          {/* ============================================================== */}
+          {/* SECCIÓN: ACTIVIDADES INTERNAS, TAREAS Y RECURSOS CON ENLACES   */}
+          {/* ============================================================== */}
+          <div className="p-4 rounded-2xl border border-indigo-200/80 dark:border-indigo-900/40 bg-indigo-50/20 dark:bg-indigo-950/20 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <ListChecks className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                    Actividades del Evento & Recursos
+                  </h4>
+                  {activities.length > 0 && (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                      {activities.filter((a) => a.completed).length}/
+                      {activities.length} completadas
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Un evento puede tener o no actividades. Puedes marcar su avance y adjuntar links a videos, documentos o páginas web.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleScaffoldAiActivities}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-xl bg-violet-600/10 hover:bg-violet-600/20 text-violet-700 dark:text-violet-300 border border-violet-500/20 transition-all active:scale-95"
+                  title="Sugerir 3 actividades paso a paso con links a videos en YouTube"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                  <span>Sugerir con IA</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAddBlankActivity}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-all active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Agregar Actividad</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Listado de Actividades */}
+            {activities.length === 0 ? (
+              <div className="py-4 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Sin actividades agregadas. Haz clic en <strong>+ Agregar Actividad</strong> o usa <strong>Sugerir con IA</strong> para desglosar el evento con videos y guías.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activities.map((act, idx) => (
+                  <div
+                    key={act.id}
+                    className={`p-3 rounded-xl border transition-all ${
+                      act.completed
+                        ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800/60'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm'
+                    }`}
+                  >
+                    {/* Fila Principal: Check + Título + Tiempo + Eliminar */}
+                    <div className="flex items-start gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActivity(act.id)}
+                        className={`mt-1 transition-colors ${
+                          act.completed
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
+                        }`}
+                        title={act.completed ? 'Marcar pendiente' : 'Marcar completada'}
+                      >
+                        {act.completed ? (
+                          <CheckSquare className="w-5 h-5" />
+                        ) : (
+                          <Square className="w-5 h-5" />
+                        )}
+                      </button>
+
+                      <div className="flex-1 space-y-1.5 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <input
+                            type="text"
+                            value={act.title}
+                            onChange={(e) =>
+                              handleUpdateActivity(act.id, {
+                                title: e.target.value,
+                              })
+                            }
+                            placeholder={`Actividad ${idx + 1} (ej. Ver clase grabada, Realizar ejercicios...)`}
+                            className={`flex-1 px-2.5 py-1 text-xs font-semibold rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-1 focus:ring-indigo-500 ${
+                              act.completed ? 'line-through text-slate-500' : 'text-slate-900 dark:text-white'
+                            }`}
+                          />
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <input
+                              type="text"
+                              value={act.time || ''}
+                              onChange={(e) =>
+                                handleUpdateActivity(act.id, {
+                                  time: e.target.value,
+                                })
+                              }
+                              placeholder="Duración / Horario (opcional)"
+                              className="w-36 px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Descripción de la actividad */}
+                        <textarea
+                          rows={1}
+                          value={act.description || ''}
+                          onChange={(e) =>
+                            handleUpdateActivity(act.id, {
+                              description: e.target.value,
+                            })
+                          }
+                          placeholder="Descripción o instrucciones de la actividad (opcional)..."
+                          className="w-full px-2.5 py-1 text-xs rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/60 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                        />
+
+                        {/* Enlaces y Recursos adjuntos a esta actividad */}
+                        <div className="pt-1.5 space-y-1.5">
+                          {act.links && act.links.length > 0 && (
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {act.links.map((link) => (
+                                <div
+                                  key={link.id}
+                                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] border shadow-xs ${
+                                    link.type === 'video'
+                                      ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                                      : link.type === 'document'
+                                      ? 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                                      : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                                  }`}
+                                >
+                                  {link.type === 'video' ? (
+                                    <Video className="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0" />
+                                  ) : link.type === 'document' ? (
+                                    <FileText className="w-3 h-3 text-sky-600 dark:text-sky-400 shrink-0" />
+                                  ) : (
+                                    <ExternalLink className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  )}
+
+                                  <a
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="font-semibold hover:underline truncate max-w-[170px]"
+                                    title={link.url}
+                                  >
+                                    {link.title}
+                                  </a>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleDeleteLinkFromActivity(
+                                        act.id,
+                                        link.id
+                                      )
+                                    }
+                                    className="p-0.5 text-slate-400 hover:text-rose-600"
+                                    title="Quitar enlace"
+                                  >
+                                    <X className="w-2.5 h-2.5" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Editor / Agregador de Link */}
+                          {activeLinkEditorId === act.id ? (
+                            <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2 animate-in fade-in">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                <input
+                                  type="text"
+                                  placeholder="Título (ej: Video Clase 3)"
+                                  value={newLinkTitle}
+                                  onChange={(e) => setNewLinkTitle(e.target.value)}
+                                  className="px-2 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                                />
+                                <input
+                                  type="url"
+                                  placeholder="URL (https://youtube.com/...)"
+                                  value={newLinkUrl}
+                                  onChange={(e) => setNewLinkUrl(e.target.value)}
+                                  className="px-2 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                                />
+                                <select
+                                  value={newLinkType}
+                                  onChange={(e) =>
+                                    setNewLinkType(e.target.value as any)
+                                  }
+                                  className="px-2 py-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900"
+                                >
+                                  <option value="video">🎥 Video (YouTube / Vimeo)</option>
+                                  <option value="document">📄 Documento / PDF / Drive</option>
+                                  <option value="link">🌐 Enlace Web General</option>
+                                </select>
+                              </div>
+
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveLinkEditorId(null)}
+                                  className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-700"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddLinkToActivity(act.id)}
+                                  className="px-3 py-1 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+                                >
+                                  Guardar Link
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveLinkEditorId(act.id);
+                                  setNewLinkTitle('');
+                                  setNewLinkUrl('');
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-lg text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 border border-dashed border-indigo-300 dark:border-indigo-800"
+                              >
+                                <Link2 className="w-3 h-3" />
+                                <span>+ Link a Video o Doc</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleAutoGenerateYoutubeLink(
+                                    act.id,
+                                    act.title
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700"
+                                title="Generar link automático de búsqueda en YouTube"
+                              >
+                                <Video className="w-3 h-3 text-rose-500" />
+                                <span>🎥 Buscar Video YouTube</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleAutoGenerateWikiLink(
+                                    act.id,
+                                    act.title
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium rounded-lg text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 border border-slate-200 dark:border-slate-700"
+                                title="Generar link automático de documentación/apunte"
+                              >
+                                <FileText className="w-3 h-3 text-sky-500" />
+                                <span>📚 Apunte / Wiki</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Botón Eliminar Actividad */}
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteActivity(act.id)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
+                        title="Eliminar esta actividad"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Botonera inferior */}
