@@ -31,6 +31,7 @@ import { AgentSyncModal } from '@/components/modals/AgentSyncModal';
 import { SubjectManagerModal } from '@/components/modals/SubjectManagerModal';
 import { CoachAssistantModal } from '@/components/modals/CoachAssistantModal';
 import { ExportCalendarModal } from '@/components/modals/ExportCalendarModal';
+import { MobileInstallModal } from '@/components/modals/MobileInstallModal';
 
 export function CalendarContainer() {
   const {
@@ -101,6 +102,7 @@ export function CalendarContainer() {
   const [isSubjectManagerOpen, setIsSubjectManagerOpen] = useState(false);
   const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isMobileInstallOpen, setIsMobileInstallOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Atajos de teclado Alt + Flecha Izquierda / Derecha para cambiar entre Calendario Académico, Scout y Trabajo
@@ -178,6 +180,7 @@ export function CalendarContainer() {
         onSelectEvent={handleSelectEvent}
         onOpenCustomizer={() => setIsCustomizerOpen(true)}
         onOpenSubjectManager={() => setIsSubjectManagerOpen(true)}
+        onOpenMobileInstallModal={() => setIsMobileInstallOpen(true)}
         onToggleArchiveSubCategory={toggleArchiveSubCategory}
         onDeleteSubCategory={deleteSubCategory}
         onResetDemoData={resetDemoData}
@@ -214,6 +217,7 @@ export function CalendarContainer() {
           onOpenSubjectManager={() => setIsSubjectManagerOpen(true)}
           onOpenCoachModal={() => setIsCoachModalOpen(true)}
           onOpenExportModal={() => setIsExportModalOpen(true)}
+          onOpenMobileInstallModal={() => setIsMobileInstallOpen(true)}
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
           backendMode={backendMode}
           isSyncing={isSyncing}
@@ -567,6 +571,13 @@ export function CalendarContainer() {
         events={events}
         subCategories={subCategories}
         subCategoryMap={subCategoryMap}
+        onOpenMobileInstallModal={() => setIsMobileInstallOpen(true)}
+      />
+
+      {/* Modal Instalar en Celular / Descargar APK */}
+      <MobileInstallModal
+        isOpen={isMobileInstallOpen}
+        onClose={() => setIsMobileInstallOpen(false)}
       />
     </div>
   );

@@ -17,6 +17,7 @@ import {
   BookOpen,
   Plus,
   Trash2,
+  Smartphone,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -48,6 +49,7 @@ interface NeoFaroSidebarProps {
   onSelectEvent: (event: CalendarEvent) => void;
   onOpenCustomizer: () => void;
   onOpenSubjectManager?: () => void;
+  onOpenMobileInstallModal?: () => void;
   onToggleArchiveSubCategory?: (id: string) => void;
   onDeleteSubCategory?: (id: string) => void;
   onResetDemoData: () => void;
@@ -71,6 +73,7 @@ export function NeoFaroSidebar({
   onSelectEvent,
   onOpenCustomizer,
   onOpenSubjectManager,
+  onOpenMobileInstallModal,
   onToggleArchiveSubCategory,
   onDeleteSubCategory,
   onResetDemoData,
@@ -561,6 +564,24 @@ export function NeoFaroSidebar({
             })}
           </div>
         </div>
+        {/* Acceso directo a Instalar en Celular / APK */}
+        {onOpenMobileInstallModal && (
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={onOpenMobileInstallModal}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all text-xs font-bold shadow-xs"
+            >
+              <div className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Instalar en Celular / APK</span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold">
+                App
+              </span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Pie de barra lateral */}

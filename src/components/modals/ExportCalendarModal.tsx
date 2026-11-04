@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   Layers,
   Sparkles,
+  Smartphone,
 } from 'lucide-react';
 import {
   CalendarEvent,
@@ -32,6 +33,7 @@ interface ExportCalendarModalProps {
   events: CalendarEvent[];
   subCategories: SubCategoryTag[];
   subCategoryMap: Record<string, SubCategoryTag>;
+  onOpenMobileInstallModal?: () => void;
 }
 
 export function ExportCalendarModal({
@@ -41,6 +43,7 @@ export function ExportCalendarModal({
   events,
   subCategories,
   subCategoryMap,
+  onOpenMobileInstallModal,
 }: ExportCalendarModalProps) {
   const [scope, setScope] = useState<'selected' | 'all'>('selected');
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
@@ -317,6 +320,37 @@ export function ExportCalendarModal({
                   <span>Descargar .json</span>
                 </button>
               </div>
+
+              {/* Opción Celular / APK */}
+              {onOpenMobileInstallModal && (
+                <div className="p-3.5 rounded-2xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 flex items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                      <Smartphone className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-bold text-emerald-900 dark:text-emerald-200">
+                        ¿Querés Calen-Neo en tu celular como App / APK?
+                      </h4>
+                      <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                        Instalá la versión WebAPK nativa en Android o descarga el paquete APK compilado.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenMobileInstallModal();
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>Ver APK</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

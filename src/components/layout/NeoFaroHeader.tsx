@@ -21,6 +21,7 @@ import {
   BookOpen,
   Bot,
   Download,
+  Smartphone,
 } from 'lucide-react';
 import { CalendarType, CalendarViewMode } from '@/types/calendar';
 import {
@@ -53,6 +54,7 @@ interface NeoFaroHeaderProps {
   onOpenSubjectManager?: () => void;
   onOpenCoachModal?: () => void;
   onOpenExportModal?: () => void;
+  onOpenMobileInstallModal?: () => void;
   onToggleMobileSidebar: () => void;
   backendMode: BackendConnectionMode;
   isSyncing: boolean;
@@ -87,6 +89,7 @@ export function NeoFaroHeader({
   onOpenSubjectManager,
   onOpenCoachModal,
   onOpenExportModal,
+  onOpenMobileInstallModal,
   onToggleMobileSidebar,
   backendMode,
   isSyncing,
@@ -200,6 +203,18 @@ export function NeoFaroHeader({
                   title="Descargar agenda (.ics, .csv, .md)"
                 >
                   <Download className="w-4 h-4" />
+                </button>
+              )}
+
+              {onOpenMobileInstallModal && (
+                <button
+                  type="button"
+                  onClick={onOpenMobileInstallModal}
+                  className="p-2 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                  aria-label="Instalar app celular / APK"
+                  title="Instalar versión para celular / Descargar APK"
+                >
+                  <Smartphone className="w-4 h-4" />
                 </button>
               )}
 
@@ -386,6 +401,18 @@ export function NeoFaroHeader({
               >
                 <Download className="w-3.5 h-3.5 text-indigo-500" />
                 <span>Descargar</span>
+              </button>
+            )}
+
+            {onOpenMobileInstallModal && (
+              <button
+                type="button"
+                onClick={onOpenMobileInstallModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all shadow-xs"
+                title="Instalar versión para celular / Descargar archivo APK"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>App Celular / APK</span>
               </button>
             )}
 

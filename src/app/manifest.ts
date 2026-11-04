@@ -1,0 +1,36 @@
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Calen-Neo Calendario',
+    short_name: 'Calen-Neo',
+    description:
+      'Gestión unificada de Calendarios Académico (UNGS), Scout y Laboral con Agente IA',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#020617',
+    theme_color: '#4F46E5',
+    orientation: 'portrait-primary',
+    categories: ['productivity', 'education'],
+    icons: [
+      {
+        src: '/icons/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'maskable',
+      },
+      {
+        src: '/icons/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'any',
+      },
+    ],
+  };
+}

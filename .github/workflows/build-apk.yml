@@ -1,0 +1,86 @@
+name: Compilar APK Android (Calen-Neo)
+
+on:
+  workflow_dispatch: # Permite compilar manualmente desde la pestaña Actions de GitHub con un botón
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'package.json'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build-apk:
+    name: Compilar APK Android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del Repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar Dependencias de Node
+        run: npm ci || npm install
+
+      - name: Instalar Capacitor para Android
+        run: |
+          npm install @capacitor/core @capacitor/cli @capacitor/android --save-dev
+
+      - name: Inicializar Configuración de Capacitor Android
+        run: |
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.calenneo.app",
+            "appName": "Calen-Neo",
+            "webDir": "public",
+            "server": {
+              "url": "https://calen-neo.vercel.app",
+              "cleartext": true
+            }
+          }
+          EOF
+
+      - name: Agregar Plataforma Android
+        run: |
+          npx cap add android
+
+      - name: Asegurar Permisos de Red en AndroidManifest
+        run: |
+          MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+          if [ -f "$MANIFEST_FILE" ]; then
+            sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />' "$MANIFEST_FILE"
+          fi
+
+      - name: Compilar APK con Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Renombrar APK Compilado
+        run: |
+          mkdir -p output-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk output-apk/Calen-Neo-v1.0.apk || true
+
+      - name: Subir APK como Artefacto Descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Calen-Neo-Android-APK
+          path: output-apk/*.apk
+          retention-days: 30

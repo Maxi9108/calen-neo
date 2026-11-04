@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1B4B" />
+      <stop offset="50%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="24" flood-color="#4F46E5" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded app icon -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+
+  <!-- Outer subtle border -->
+  <rect x="8" y="8" width="496" height="496" rx="120" fill="none" stroke="#4F46E5" stroke-width="4" stroke-opacity="0.4" />
+
+  <!-- Calendar Container Card -->
+  <g filter="url(#shadow)">
+    <rect x="96" y="112" width="320" height="296" rx="40" fill="#1E293B" stroke="#334155" stroke-width="4" />
+    
+    <!-- Calendar Top Header Banner -->
+    <path d="M 96 152 Q 96 112 136 112 L 376 112 Q 416 112 416 152 L 416 192 L 96 192 Z" fill="url(#accentGrad)" />
+
+    <!-- Calendar Ring Clips -->
+    <rect x="160" y="88" width="24" height="48" rx="12" fill="#F8FAFC" />
+    <rect x="328" y="88" width="24" height="48" rx="12" fill="#F8FAFC" />
+
+    <!-- Calendar Grid Dots / Days -->
+    <circle cx="160" cy="248" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="224" cy="248" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="288" cy="248" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="352" cy="248" r="14" fill="#64748B" opacity="0.6" />
+
+    <circle cx="160" cy="304" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="224" cy="304" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="288" cy="304" r="14" fill="#64748B" opacity="0.6" />
+
+    <!-- Highlighted Active Day with Checkmark -->
+    <circle cx="352" cy="304" r="22" fill="url(#glowGrad)" />
+    <path d="M 342 304 L 349 311 L 363 297" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Third row -->
+    <circle cx="160" cy="360" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="224" cy="360" r="14" fill="#64748B" opacity="0.6" />
+    <circle cx="288" cy="360" r="14" fill="#F59E0B" />
+    <circle cx="352" cy="360" r="14" fill="#64748B" opacity="0.6" />
+  </g>
+
+  <!-- Small Calen-Neo Signal Badge in Corner -->
+  <circle cx="396" cy="116" r="32" fill="#10B981" />
+  <circle cx="396" cy="116" r="22" fill="#020617" />
+  <circle cx="396" cy="116" r="12" fill="#10B981" />
+</svg>
