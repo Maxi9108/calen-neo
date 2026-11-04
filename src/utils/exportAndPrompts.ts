@@ -176,3 +176,117 @@ export function exportRoadmapMarkdown(subject: SubCategoryTag, relatedEvents: Ca
 
   return md;
 }
+
+
+/**
+ * Genera un archivo CSV estructurado listo para abrir en Microsoft Excel o Google Sheets
+ */
+export function generateCalendarCSV(
+  events: CalendarEvent[],
+  subCategoryMap: Record<string, SubCategoryTag>
+): string {
+  const headers = [
+    'ID',
+    'Titulo',
+    'Entorno',
+    'Materia / Categoria',
+    'Tipo de Evento',
+    'Estado',
+    'Completado',
+    'Fecha Inicio',
+    'Fecha Fin',
+    'Puntos Obtenidos',
+    'Puntos Maximos',
+    'Ubicacion',
+    'Descripcion',
+  ];
+
+  const escapeCSV = (str: string | null | undefined): string => {
+    if (!str) return '""';
+    const clean = str.replace(/"/g, '""');
+    return `"${clean}"`;
+  };
+
+  const rows = events.map((e) => {
+    const sub = e.subCategoryId ? subCategoryMap[e.subCategoryId] : null;
+    const subName = sub ? `${sub.name} (${sub.shortCode})` : 'General';
+
+    return [
+      escapeCSV(e.id),
+      escapeCSV(e.title),
+      escapeCSV(e.calendarType.toUpperCase()),
+      escapeCSV(subName),
+      escapeCSV(e.category),
+      escapeCSV(e.status),
+      e.completed ? '"SI"' : '"NO"',
+      escapeCSV(e.startDate.replace('T', ' ')),
+      escapeCSV(e.endDate.replace('T', ' ')),
+      e.pointsEarned !== undefined && e.pointsEarned !== null ? e.pointsEarned : '',
+      e.pointsMax !== undefined && e.pointsMax !== null ? e.pointsMax : '',
+      escapeCSV(e.location || ''),
+      escapeCSV(e.description || ''),
+    ].join(',');
+  });
+
+  return [headers.join(','), ...rows].join('\r\n');
+}
+
+/**
+ * Genera un Informe Detallado Completo con todos los datos en formato Markdown
+ */
+export function generateDetailedReportMarkdown(
+  title: string,
+  events: CalendarEvent[],
+  subCategoryMap: Record<string, SubCategoryTag>
+): string {
+  const now = new Date().toLocaleString('es-AR');
+  const completed = events.filter((e) => e.completed).length;
+  const pending = events.filter((e) => !e.completed).length;
+
+  let md = `# ${title}\n\n`;
+  md += `*Generado por Calen-Neo el ${now}*\n\n`;
+  md += `### Resumen General:\n`;
+  md += `- **Total de Eventos:** ${events.length}\n`;
+  md += `- **Completados / Aprobados:** ${completed}\n`;
+  md += `- **Pendientes / En Proceso:** ${pending}\n\n`;
+  md += `---\n\n`;
+
+  // Agrupar por Entorno
+  const environments: ('academico' | 'scout' | 'trabajo')[] = ['academico', 'scout', 'trabajo'];
+  const envTitles = {
+    academico: '🎓 Calendario Académico (UNGS)',
+    scout: '🧭 Calendario Scout',
+    trabajo: '💼 Calendario de Trabajo',
+  };
+
+  environments.forEach((env) => {
+    const envEvents = events.filter((e) => e.calendarType === env);
+    if (envEvents.length === 0) return;
+
+    md += `## ${envTitles[env]} (${envEvents.length} eventos)\n\n`;
+
+    envEvents.forEach((evt, idx) => {
+      const sub = evt.subCategoryId ? subCategoryMap[evt.subCategoryId] : null;
+      const subLabel = sub ? `[${sub.name}]` : '';
+      const check = evt.completed ? '✅ COMPLETADO' : '⏳ PENDIENTE';
+      const sat = evt.isSaturdayToSaturday ? '⛺ [Sábado a Sábado]' : '';
+      const pts =
+        evt.pointsMax !== undefined && evt.pointsMax !== null
+          ? `🏆 Puntaje: ${evt.pointsEarned ?? 0}/${evt.pointsMax} pts`
+          : '';
+
+      md += `### ${idx + 1}. ${evt.title} ${subLabel}\n`;
+      md += `- **Estado:** ${check} (${evt.status.toUpperCase()}) ${sat}\n`;
+      md += `- **Categoría:** ${evt.category}\n`;
+      md += `- **Horario:** Desde ${evt.startDate.replace('T', ' ')} hasta ${evt.endDate.replace('T', ' ')}\n`;
+      if (pts) md += `- **Puntos:** ${pts}\n`;
+      if (evt.location) md += `- **Ubicación:** ${evt.location}\n`;
+      if (evt.description) md += `- **Descripción:** ${evt.description}\n`;
+      md += `\n`;
+    });
+
+    md += `---\n\n`;
+  });
+
+  return md;
+}

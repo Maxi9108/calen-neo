@@ -30,6 +30,7 @@ import { CustomizerModal } from '@/components/modals/CustomizerModal';
 import { AgentSyncModal } from '@/components/modals/AgentSyncModal';
 import { SubjectManagerModal } from '@/components/modals/SubjectManagerModal';
 import { CoachAssistantModal } from '@/components/modals/CoachAssistantModal';
+import { ExportCalendarModal } from '@/components/modals/ExportCalendarModal';
 
 export function CalendarContainer() {
   const {
@@ -98,6 +99,7 @@ export function CalendarContainer() {
   const [isAgentModalOpen, setIsAgentModalOpen] = useState(false);
   const [isSubjectManagerOpen, setIsSubjectManagerOpen] = useState(false);
   const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Atajos de teclado Alt + Flecha Izquierda / Derecha para cambiar entre Calendario Académico, Scout y Trabajo
@@ -206,6 +208,7 @@ export function CalendarContainer() {
           onOpenAgentModal={() => setIsAgentModalOpen(true)}
           onOpenSubjectManager={() => setIsSubjectManagerOpen(true)}
           onOpenCoachModal={() => setIsCoachModalOpen(true)}
+          onOpenExportModal={() => setIsExportModalOpen(true)}
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
           backendMode={backendMode}
           isSyncing={isSyncing}
@@ -547,6 +550,16 @@ export function CalendarContainer() {
         notificationsEnabled={notificationsEnabled}
         onRequestNotificationPermission={requestNotificationPermission}
         onScheduleStudyEvent={(evt) => addOrUpdateEvent(evt)}
+      />
+
+      {/* Modal Exportar y Descargar Calendario Seleccionado o Completo */}
+      <ExportCalendarModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        activeCalendar={activeCalendar}
+        events={events}
+        subCategories={subCategories}
+        subCategoryMap={subCategoryMap}
       />
     </div>
   );

@@ -20,6 +20,7 @@ import {
   X,
   BookOpen,
   Bot,
+  Download,
 } from 'lucide-react';
 import { CalendarType, CalendarViewMode } from '@/types/calendar';
 import {
@@ -51,6 +52,7 @@ interface NeoFaroHeaderProps {
   onOpenAgentModal: () => void;
   onOpenSubjectManager?: () => void;
   onOpenCoachModal?: () => void;
+  onOpenExportModal?: () => void;
   onToggleMobileSidebar: () => void;
   backendMode: BackendConnectionMode;
   isSyncing: boolean;
@@ -84,6 +86,7 @@ export function NeoFaroHeader({
   onOpenAgentModal,
   onOpenSubjectManager,
   onOpenCoachModal,
+  onOpenExportModal,
   onToggleMobileSidebar,
   backendMode,
   isSyncing,
@@ -161,7 +164,7 @@ export function NeoFaroHeader({
               </div>
             </div>
 
-            {/* Acciones Rápidas Móvil (Coach, Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
+            {/* Acciones Rápidas Móvil (Coach, Descargar, Búsqueda, Modo Claro/Oscuro, + Nuevo) */}
             <div className="flex lg:hidden items-center gap-1.5 shrink-0">
               {onOpenCoachModal && (
                 <button
@@ -172,6 +175,18 @@ export function NeoFaroHeader({
                   title="Coach & Rutinas"
                 >
                   <Bot className="w-4 h-4" />
+                </button>
+              )}
+
+              {onOpenExportModal && (
+                <button
+                  type="button"
+                  onClick={onOpenExportModal}
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200"
+                  aria-label="Descargar agenda"
+                  title="Descargar agenda (.ics, .csv, .md)"
+                >
+                  <Download className="w-4 h-4" />
                 </button>
               )}
 
@@ -348,6 +363,18 @@ export function NeoFaroHeader({
               <Palette className="w-3.5 h-3.5 text-indigo-500" />
               <span>Estilos y Colores</span>
             </button>
+
+            {onOpenExportModal && (
+              <button
+                type="button"
+                onClick={onOpenExportModal}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/60 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all shadow-sm"
+                title="Descargar calendario seleccionado o todos completos con detalles"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Descargar</span>
+              </button>
+            )}
 
             <button
               type="button"
